@@ -47,11 +47,11 @@ def main():
             print("Press any key to try again...")
             term.inkey()
     print(term.clear)
-    print("Opened wallet: " + wallet)
+    print("Opened wallet.")
     print()
     balances = wallet_balances(wallet)['balances']
     for balance in balances:
-        print(balances[balance]['balance'] + " ITCO @ " + balance)
+        print("Balance: " + balances[balance]['balance'] + " ITCO \nAddress: " + balance)
 
     # Begin main loop
 
@@ -67,10 +67,12 @@ def main():
             print(term.clear)
             balances = wallet_balances(wallet)['balances']
             for balance in balances:
-                print(balances[balance]['balance'] + " ITCO @ " + balance)
+                print("Balance: " + balances[balance]['balance'] + " ITCO \nAddress: " + balance)
         elif command == "quit" or command[0] == "exit":
             print(term.clear)
             exit(0)
+        elif command == "clear":
+            print(term.clear)
         else:
             print("Command not found, try using the help command.")
 
