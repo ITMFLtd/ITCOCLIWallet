@@ -36,7 +36,7 @@ def main():
 
     if wallets is None:
         print("No wallet could be detected. Creating one for you...")
-        wallet = create_wallet()["wallet"]
+        wallet = create_wallet()['wallet']
         with open(WALLET_FILE, 'w') as f:
             json.dump({"main": wallet}, f)
 
@@ -92,7 +92,7 @@ def wallet_balances(wallet):
         "action": "wallet_balances",
         "wallet": wallet
     }
-    return json.loads(post(data).content)
+    return post(data).json()
 
 
 def wallet_info(wallet):
@@ -100,14 +100,14 @@ def wallet_info(wallet):
         "action": "wallet_info",
         "wallet": wallet
     }
-    return json.loads(post(data).content)
+    return post(data).json()
 
 
 def create_wallet():
     data = {
         "action": "wallet_create"
     }
-    return json.loads(post(data).content)
+    return post(data).json()
 
 
 def post(data):
