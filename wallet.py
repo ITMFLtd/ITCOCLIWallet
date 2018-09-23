@@ -1,11 +1,10 @@
 import os
-
-import requests
+from rpc import *
+from config import *
 import json
 import sys
 from blessed import Terminal
 
-RPC_ADDRESS = "http://localhost:1761"
 WALLET_FILE = "wallets.json"
 
 wallet = None
@@ -24,15 +23,10 @@ def main():
     if post("{}") is None:
         print("Failed to connect to ITCO node. Make sure node is running with correct config.")
         sys.exit(1)
-    if not os.path.exists(WALLET_FILE):
-        touch = open(WALLET_FILE, 'w+')
-        touch.close()
 
-    with open(WALLET_FILE, 'r') as f:
-        try:
-            wallets = json.load(f)
-        except json.JSONDecodeError:
-            wallets = None
+    touch_file(WALLET_FILE)
+
+    wallets = load_json_file(WALLET_FILE)
 
     if wallets is None:
         print("No wallet could be detected. Creating one for you...")
@@ -67,12 +61,15 @@ def main():
 
     while True:
         print(term.move(term.height - term.get_location(timeout=5)[1] - 1, 0))
-        command = input("ITCO Wallet > ")
+        command = input(term.bold(term.red("ITCO Wallet") + " > "))
         if not command:
             print("No command entered.")
             continue
         if command == "help":
-            print("Add help pages!")
+            print("help".ljust(15) + "Prints this help page.")
+            print("balances".ljust(15) + "Lists your accounts and balances.")
+            print("clear".ljust(15) + "Clears your current wallet page to clean it up.")
+            print("quit/exit".ljust(15) + "Exits wallet")
         elif command == "balances":
             print(term.clear)
             balances = wallet_balances(wallet)['balances']
@@ -85,36 +82,6 @@ def main():
             print(term.clear)
         else:
             print("Command not found, try using the help command.")
-
-
-def wallet_balances(wallet):
-    data = {
-        "action": "wallet_balances",
-        "wallet": wallet
-    }
-    return post(data).json()
-
-
-def wallet_info(wallet):
-    data = {
-        "action": "wallet_info",
-        "wallet": wallet
-    }
-    return post(data).json()
-
-
-def create_wallet():
-    data = {
-        "action": "wallet_create"
-    }
-    return post(data).json()
-
-
-def post(data):
-    try:
-        return requests.post(RPC_ADDRESS, data=json.dumps(data))
-    except requests.exceptions.RequestException:
-        return None
 
 
 if __name__ == "__main__":
