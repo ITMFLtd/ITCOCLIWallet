@@ -14,11 +14,13 @@ term = Terminal()
 def main():
     global wallet
     print(term.enter_fullscreen)
-    print(term.move_y(term.height // 2 - 2) +
-          term.center('Welcome to ITCOWallet').rstrip())
-    print(term.move_y(term.height // 2 - 1) +
-          term.center('Press Any Key to Continue').rstrip())
-    term.inkey()
+    with term.hidden_cursor():
+        print(term.move_y(term.height // 2 - 2) +
+              term.center('Welcome to ITCOWallet').rstrip())
+        print(term.move_y(term.height // 2 - 1) +
+              term.center('Press Any Key to Continue').rstrip())
+        with term.cbreak():
+            term.inkey()
     print(term.clear)
     if post("{}") is None:
         print("Failed to connect to ITCO node. Make sure node is running with correct config.")
@@ -34,22 +36,28 @@ def main():
         with open(WALLET_FILE, 'w') as f:
             json.dump({"main": wallet}, f)
 
+    selected = 0
     while wallet is None:
-        print(term.clear)
-        print("Which wallet would you like to open?")
-        print("Do not enter a wallet name to default to \"main\".")
-        for w in wallets:
-            print(w)
-        wallet_name = input("\nEnter wallet name: ")
-        if not wallet_name:
-            wallet_name = "main"
-        if wallet_name in wallets:
-            wallet = wallets[wallet_name]
-        else:
+        with term.hidden_cursor():
             print(term.clear)
-            print("Wallet not found with name: " + wallet_name)
-            print("Press any key to try again...")
-            term.inkey()
+            print("Use arrow keys to select wallet.")
+            options = list(wallets.keys())
+            for i, o in enumerate(options):
+                if i == selected:
+                    print(term.reverse(o))
+                else:
+                    print(o)
+            with term.cbreak():
+                button = term.inkey()
+                if button.name == 'KEY_UP':
+                    selected = max(0, selected - 1)
+                    print(selected)
+                if button.name == 'KEY_DOWN':
+                    selected = min(len(options) - 1, selected + 1)
+                    print(selected)
+                if button.name == 'KEY_ENTER':
+                    wallet = wallets[options[selected]]
+
     print(term.clear)
     print("Opened wallet.")
     print()
