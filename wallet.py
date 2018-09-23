@@ -1,9 +1,12 @@
+import os
+
 import requests
 import json
 import sys
 from blessed import Terminal
 
 RPC_ADDRESS = "http://localhost:1761"
+WALLET_FILE = "wallets.json"
 
 wallet = None
 term = Terminal()
@@ -21,15 +24,22 @@ def main():
     if post("{}") is None:
         print("Failed to connect to ITCO node. Make sure node is running with correct config.")
         sys.exit(1)
-    with open('wallets.json', 'r') as f:
+    if not os.path.exists(WALLET_FILE):
+        touch = open(WALLET_FILE, 'w+')
+        touch.close()
+
+    with open(WALLET_FILE, 'r') as f:
         try:
             wallets = json.load(f)
         except json.JSONDecodeError:
-            print("No wallet file available implement later.")
-            sys.exit(1)
-    if not wallets:
-        print("No wallets available. Implement this later.")
-        sys.exit(1)
+            wallets = None
+
+    if wallets is None:
+        print("No wallet could be detected. Creating one for you...")
+        wallet = create_wallet()["wallet"]
+        with open(WALLET_FILE, 'w') as f:
+            json.dump({"main": wallet}, f)
+
     while wallet is None:
         print(term.clear)
         print("Which wallet would you like to open?")
@@ -89,6 +99,13 @@ def wallet_info(wallet):
     data = {
         "action": "wallet_info",
         "wallet": wallet
+    }
+    return json.loads(post(data).content)
+
+
+def create_wallet():
+    data = {
+        "action": "wallet_create"
     }
     return json.loads(post(data).content)
 
