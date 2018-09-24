@@ -7,14 +7,6 @@ import sys
 from blessed import Terminal
 
 WALLET_FILE = "wallets.json"
-splash = """  _____ _______ _____ ____  
- |_   _|__   __/ ____/ __ \ 
-   | |    | | | |   | |  | |
-   | |    | | | |   | |  | |
-  _| |_   | | | |___| |__| |
- |_____|  |_|  \_____\____/ 
-                            
-                            """
 
 wallet = None
 term = Terminal()
@@ -23,17 +15,7 @@ term = Terminal()
 def main():
     global wallet
     print(term.enter_fullscreen)
-    with term.hidden_cursor():
-        offset = 7
-        for line in splash.splitlines():
-            print(term.move_y(term.height // 2 - offset) +
-                  term.center(line).rstrip())
-            offset -= 1
-        print(term.move_y(term.height // 2) +
-              term.center(term.bold('Press Any Key to Continue')))
-        with term.cbreak():
-            term.inkey()
-    print(term.clear)
+    gui.show_splash_screen(term)
     if rpc.post("{}") is None:
         print("Failed to connect to ITCO node. Make sure node is running with correct config.")
         sys.exit(1)
@@ -70,6 +52,7 @@ def main():
             print("help".ljust(15) + "Prints this help page.")
             print("balances".ljust(15) + "Lists your accounts and balances.")
             print("clear".ljust(15) + "Clears your current wallet page to clean it up.")
+            print("history".ljust(15) + "Shows a list of recent transactions.")
             print("send".ljust(15) + "Send ITCO to another account.")
             print("quit/exit".ljust(15) + "Exits wallet")
         elif command == "balances":
@@ -102,6 +85,15 @@ def main():
                 print("Transaction sent in block: " + response['block'])
                 continue
             print("Transaction cancelled.")
+        elif command == "history":
+            options = []
+            balances = rpc.wallet_balances(wallet)['balances']
+            for balance in balances:
+                options.append(balance)
+            account = gui.gui_select_from(term, options, prompt='Select your account to check history.')
+            history = rpc.history(account)
+            for transaction in history['history']:
+                print(transaction['type'] + " " + transaction['amount'] + " ITCO to/from " + transaction['account'])
         elif command == "quit" or command[0] == "exit":
             print(term.clear)
             exit(0)

@@ -46,6 +46,24 @@ def send(wallet, src, dest, amount):
     return post(data).json()
 
 
+def history(account):
+    data = {
+      "action": "account_history",
+      "account": account,
+      "count": 10
+    }
+    response = post(data).json()
+    return response
+
+
+def account_block_count(account):
+    data = {
+      "action": "account_block_count",
+      "account": account
+    }
+    return post(data).json()
+
+
 def post(data):
     try:
         return requests.post(RPC_ADDRESS, data=json.dumps(data))
