@@ -64,6 +64,14 @@ def account_block_count(account):
     return post(data).json()
 
 
+def create_account(wallet):
+    data = {
+      "action": "account_create",
+      "wallet": wallet
+    }
+    return post(data).json()
+
+
 def post(data):
     try:
         return requests.post(RPC_ADDRESS, data=json.dumps(data))

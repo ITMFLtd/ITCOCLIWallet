@@ -53,6 +53,7 @@ def main():
             print("balances".ljust(15) + "Lists your accounts and balances.")
             print("clear".ljust(15) + "Clears your current wallet page to clean it up.")
             print("history".ljust(15) + "Shows a list of recent transactions.")
+            print("receive".ljust(15) + "Select address and show QR")
             print("send".ljust(15) + "Send ITCO to another account.")
             print("quit/exit".ljust(15) + "Exits wallet")
         elif command == "balances":
@@ -94,6 +95,14 @@ def main():
             history = rpc.history(account)
             for transaction in history['history']:
                 print(transaction['type'] + " " + transaction['amount'] + " ITCO to/from " + transaction['account'])
+        elif command == "receive":
+            options = []
+            balances = rpc.wallet_balances(wallet)['balances']
+            for balance in balances:
+                options.append(balance)
+            account = gui.gui_select_from(term, options, prompt='Select the account you wish to receive from.')
+        elif command == "new_account":
+            print("New account created: " + rpc.create_account(wallet)['account'])
         elif command == "quit" or command[0] == "exit":
             print(term.clear)
             exit(0)
