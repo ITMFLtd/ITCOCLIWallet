@@ -14,6 +14,11 @@ term = Terminal()
 
 def main():
     global wallet
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "--test":
+            rpc.TESTING_MODE = True
+        else:
+            print("Invalid argument(s) passed.")
     print(term.enter_fullscreen)
     gui.show_splash_screen(term)
     if rpc.post("{}") is None:
@@ -21,8 +26,11 @@ def main():
         sys.exit(1)
 
     config.touch_file(WALLET_FILE)
-
-    wallets = config.load_json_file(WALLET_FILE)
+    if rpc.TESTING_MODE:
+        wallets = {"main":
+                       "1228F21VOIDE839C9D9CTEST775E148D00634F6TESTE84948F092EE209D32A96"}
+    else:
+        wallets = config.load_json_file(WALLET_FILE)
 
     if wallets is None:
         print("No wallet could be detected. Creating one for you...")
