@@ -1,4 +1,4 @@
 .idea/
-wallets.json
+config.json
 *.pyc
 __pycache__/

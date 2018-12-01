@@ -1,18 +1,95 @@
+#!/usr/bin/python
 import os
-import gui
 import rpc
 import config
 import json
 import sys
-from blessed import Terminal
+import click
 import qrcode
+import config
 
-WALLET_FILE = "wallets.json"
+@click.group()
+def cli():
+    pass
 
-wallet = None
-term = Terminal()
+@cli.group()
+def wallet():
+    pass
+
+@cli.group()
+def account():
+    pass
 
 
+@account.command(name="list")
+@click.option("--verbose", "-v", is_flag=True, default=False)
+def list_account(verbose):
+    wallet = config.get("selected_wallet")
+    if not wallet:
+        print("No wallet has been selected. Try \"wallet.py wallet\"")
+        return
+    wallet_balances = rpc.wallet_balances(config.get("wallets").get(wallet))
+    for account, balances in wallet_balances["balances"].items():
+        print(account + (":" if verbose else ""))
+        if verbose:
+            print("Balance: " + balances["balance"] + " ITCO")
+            print("Pending: " + balances["pending"] + " ITCO")
+            print()
+
+
+@cli.command()
+def status():
+    wallet = config.get("selected_wallet")
+    if not wallet:
+        print("No wallet has been selected. Try \"wallet.py wallet\"")
+        return
+    wallet_info = rpc.wallet_info(config.get("wallets")[wallet])
+    print(wallet + ":")
+    print("Balance: " + wallet_info["balance"] + " ITCO")
+    print("Pending: " + wallet_info["pending"] + " ITCO")
+    print("Number of accounts: " + wallet_info["accounts_count"])
+    print()
+
+
+@wallet.command()
+@click.argument('wallet')
+def set(wallet):
+    if wallet in config.get("wallets"):
+        config.conf["selected_wallet"] = wallet
+        config.save_json_file()
+        print("Your selected wallet is now " + wallet)
+    else:
+        print("Could not find a wallet with that name. Check your config.json.")
+
+
+@wallet.command(name="list")
+@click.option("--verbose", "-v", is_flag=True, default=False)
+def list_wallet(verbose):
+    wallets = config.get("wallets")
+    for wallet in wallets:
+        print(wallet + ": " + wallets[wallet])
+        if verbose:
+            wallet_info = rpc.wallet_info(wallets[wallet])
+            print("Balance: " + wallet_info["balance"] + " ITCO")
+            print("Pending: " + wallet_info["pending"] + " ITCO")
+            print("Number of accounts: " + wallet_info["accounts_count"])
+            print()
+
+
+def main():
+    config.init_config()
+    if rpc.post("{}") is None:
+        print("Failed to connect to ITCO node. Make sure node is running with correct config.")
+        sys.exit(1)
+    if not config.get("wallets"):
+        print("There are no wallets associated with this account. Creating one now...")
+        wallet = rpc.create_wallet()['wallet']
+        config.get("wallets")["main"] = wallet
+    cli()
+
+
+
+"""
 def main():
     global wallet
     if len(sys.argv) > 1:
@@ -124,7 +201,7 @@ def main():
             print(term.clear)
         else:
             print("Command not found, try using the help command.")
-
+"""
 
 if __name__ == "__main__":
     main()

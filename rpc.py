@@ -1,7 +1,7 @@
 import requests
 import json
+import config
 
-RPC_ADDRESS = "http://localhost:1761"
 TESTING_MODE = False
 
 
@@ -133,6 +133,6 @@ def post(data):
     if TESTING_MODE:
         return {}
     try:
-        return requests.post(RPC_ADDRESS, data=json.dumps(data))
+        return requests.post(config.get("rpc_address"), data=json.dumps(data))
     except requests.exceptions.RequestException:
         return None
