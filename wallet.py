@@ -5,6 +5,7 @@ import config
 import json
 import sys
 from blessed import Terminal
+import qrcode
 
 WALLET_FILE = "wallets.json"
 
@@ -109,6 +110,11 @@ def main():
             for balance in balances:
                 options.append(balance)
             account = gui.gui_select_from(term, options, prompt='Select the account you wish to receive from.')
+            if account == "New":
+                break
+            qr = qrcode.QRCode(error_correction=qrcode.ERROR_CORRECT_Q)
+            qr.add_data(account)
+            qr.print_ascii()
         elif command == "new_account":
             print("New account created: " + rpc.create_account(wallet)['account'])
         elif command == "quit" or command[0] == "exit":
