@@ -1,12 +1,11 @@
 #!/usr/bin/python
-import os
 import rpc
-import config
-import json
 import sys
 import click
 import qrcode
 import config
+import utils
+
 
 @click.group()
 def cli():
@@ -24,9 +23,8 @@ def account():
 @account.command(name="list")
 @click.option("--verbose", "-v", is_flag=True, default=False)
 def list_account(verbose):
-    wallet = config.get("selected_wallet")
-    if not wallet:
-        print("No wallet has been selected. Try \"wallet.py wallet\"")
+    wallet = utils.get_selected_wallet()
+    if wallet is None:
         return
     wallet_balances = rpc.wallet_balances(config.get("wallets").get(wallet))
     for account, balances in wallet_balances["balances"].items():
@@ -37,11 +35,37 @@ def list_account(verbose):
             print()
 
 
+@account.command(name="history")
+@click.argument("account")
+def history(account):
+    wallet = utils.get_selected_wallet()
+    if wallet is None:
+        return
+    accounts = rpc.wallet_balances(config.get("wallets").get(wallet))["balances"].keys()
+    matches = [x for x in accounts if x.startswith(account)]
+    if not matches:
+        print("Could not locate any account addresses in the currently selected wallet that match the entry.")
+        return
+    if len(matches) > 1:
+        print("Multiple matches were found for your given query. Please be more specific.")
+        for match in matches:
+            print(match)
+        return
+    match = matches[0]
+    history = rpc.history(match)["history"]
+    if not history:
+        print("No history available for this account.")
+        return
+    print("History for account: " + match)
+    for transaction in history:
+        print(transaction['type'] + " " + transaction['amount'] + " ITCO to/from " + transaction['account'])
+
+
+
 @cli.command()
 def status():
-    wallet = config.get("selected_wallet")
-    if not wallet:
-        print("No wallet has been selected. Try \"wallet.py wallet\"")
+    wallet = utils.get_selected_wallet()
+    if wallet is None:
         return
     wallet_info = rpc.wallet_info(config.get("wallets")[wallet])
     print(wallet + ":")
@@ -74,6 +98,15 @@ def list_wallet(verbose):
             print("Pending: " + wallet_info["pending"] + " ITCO")
             print("Number of accounts: " + wallet_info["accounts_count"])
             print()
+
+
+@wallet.command(name="selected")
+def selected_wallet():
+    wallet = utils.get_selected_wallet()
+    if wallet is None:
+        return
+    print("Currently selected wallet is: " + wallet)
+    print("Wallet ID: " + config.get("wallets")[wallet])
 
 
 def main():
