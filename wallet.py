@@ -68,7 +68,7 @@ def send():
     if not click.confirm("Is this correct"):
         print("Aborting...")
         return
-    response = rpc.send(utils.get_wallet_from_name(wallet), sender, recv, amount)
+    response = rpc.send(utils.get_wallet_from_name(wallet), match, recv, amount)
     if 'error' in response.keys():
         print('An error occurred during sending: ' + response['error'])
         return
