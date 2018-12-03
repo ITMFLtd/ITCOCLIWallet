@@ -20,6 +20,61 @@ def account():
     pass
 
 
+@cli.command()
+def status():
+    wallet = utils.get_selected_wallet()
+    if wallet is None:
+        return
+    wallet_info = rpc.wallet_info(config.get("wallets")[wallet])
+    print(wallet + ":")
+    print("Balance: " + wallet_info["balance"] + " ITCO")
+    print("Pending: " + wallet_info["pending"] + " ITCO")
+    print("Number of accounts: " + wallet_info["accounts_count"])
+    print()
+
+
+@cli.command()
+def send():
+    print("Please enter the address of the account you'd like to send from")
+    sender = click.prompt("")
+    wallet = utils.get_selected_wallet()
+    if wallet is None:
+        return
+    accounts = rpc.wallet_balances(utils.get_wallet_from_name(wallet))["balances"].keys()
+    matches = [x for x in accounts if x.startswith(sender)]
+    if not matches:
+        print("Could not locate any account addresses in the currently selected wallet that match the entry.")
+        return
+    if len(matches) > 1:
+        print("Multiple matches were found for your given query. Please be more specific.")
+        for match in matches:
+            print(match)
+        return
+    match = matches[0]
+    print("Found a match based on your input: " + match)
+    if not click.confirm("Is this correct"):
+        print("Aborting...")
+        return
+    print("Please enter the address of the account you'd like to send to")
+    recv = click.prompt("")
+    balance = int(rpc.account_balance(match)["balance"])
+    print("You currently have " + str(balance) + " ITCO available to send.")
+    amount = click.prompt("How much would you like to send", type=int)
+    if amount > balance:
+        print("The amount entered was higher than your available balance!")
+        return
+    print("You are about to send " + str(amount) + " ITCO from " + match + " to " + recv)
+    print("Please triple check your target address and amount. This action is NOT reversible.")
+    if not click.confirm("Is this correct"):
+        print("Aborting...")
+        return
+    response = rpc.send(utils.get_wallet_from_name(wallet), sender, recv, amount)
+    if 'error' in response.keys():
+        print('An error occurred during sending: ' + response['error'])
+        return
+    print("Transaction sent in block: " + response['block'])
+
+
 @account.command(name="qr")
 @click.argument("account")
 def qr(account):
@@ -40,7 +95,6 @@ def qr(account):
     qr = qrcode.QRCode(error_correction=qrcode.ERROR_CORRECT_Q)
     qr.add_data(match)
     qr.print_ascii()
-
 
 
 @account.command(name="new")
@@ -91,20 +145,6 @@ def history(account):
     print("History for account: " + match)
     for transaction in history:
         print(transaction['type'] + " " + transaction['amount'] + " ITCO to/from " + transaction['account'])
-
-
-
-@cli.command()
-def status():
-    wallet = utils.get_selected_wallet()
-    if wallet is None:
-        return
-    wallet_info = rpc.wallet_info(config.get("wallets")[wallet])
-    print(wallet + ":")
-    print("Balance: " + wallet_info["balance"] + " ITCO")
-    print("Pending: " + wallet_info["pending"] + " ITCO")
-    print("Number of accounts: " + wallet_info["accounts_count"])
-    print()
 
 
 @wallet.command()
