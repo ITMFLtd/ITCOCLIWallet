@@ -20,6 +20,38 @@ def account():
     pass
 
 
+@account.command(name="qr")
+@click.argument("account")
+def qr(account):
+    wallet = utils.get_selected_wallet()
+    if wallet is None:
+        return
+    accounts = rpc.wallet_balances(utils.get_wallet_from_name(wallet))["balances"].keys()
+    matches = [x for x in accounts if x.startswith(account)]
+    if not matches:
+        print("Could not locate any account addresses in the currently selected wallet that match the entry.")
+        return
+    if len(matches) > 1:
+        print("Multiple matches were found for your given query. Please be more specific.")
+        for match in matches:
+            print(match)
+        return
+    match = matches[0]
+    qr = qrcode.QRCode(error_correction=qrcode.ERROR_CORRECT_Q)
+    qr.add_data(match)
+    qr.print_ascii()
+
+
+
+@account.command(name="new")
+def new_account():
+    wallet = utils.get_selected_wallet()
+    if wallet is None:
+        return
+    account = rpc.create_account(utils.get_wallet_from_name(wallet))['account']
+    print("New account created: " + account)
+
+
 @account.command(name="list")
 @click.option("--verbose", "-v", is_flag=True, default=False)
 def list_account(verbose):
